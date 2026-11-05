@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+
+# macOS
+.DS_Store
+
