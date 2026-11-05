@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Indian Mutual Fund AI Analyst — 100-Point Live Scorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body { background-color: #0b0f19; color: #e2e8f0; font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif; }
+    .glass { background: rgba(17, 24, 39, 0.82); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+    .prose table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 0.85rem; }
+    .prose th, .prose td { border: 1px solid rgba(255,255,255,0.12); padding: 8px 10px; text-align: left; }
+    .prose th { background: rgba(30, 41, 59, 0.9); color: #93c5fd; }
+    .prose h2 { font-size: 1.25rem; font-weight: 700; color: #f8fafc; margin-top: 0.75rem; margin-bottom: 0.5rem; }
+    .prose h3 { font-size: 1.05rem; font-weight: 600; color: #93c5fd; margin-top: 1rem; margin-bottom: 0.4rem; }
+    .prose h4 { font-size: 0.95rem; font-weight: 600; color: #cbd5e1; margin-top: 0.75rem; margin-bottom: 0.25rem; }
+    .prose ul { list-style-type: disc; padding-left: 1.25rem; margin: 0.4rem 0; }
+    .prose blockquote { border-left: 3px solid #3b82f6; padding-left: 0.75rem; color: #94a3b8; margin: 0.5rem 0; }
+    .prose code { background: rgba(30, 41, 59, 0.9); padding: 2px 5px; border-radius: 4px; color: #38bdf8; font-size: 0.82rem; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col">
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-950/90 sticky top-0 z-30 px-6 py-3.5 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-emerald-500 to-blue-600 flex items-center justify-center font-bold text-white shadow">MF</div>
+      <div>
+        <h1 class="text-base font-bold text-white tracking-tight">Indian Mutual Fund AI Evaluation Agent</h1>
+        <p class="text-xs text-slate-400">Stateless Live Web Scraping • AMFI NAV & TRI Rolling Analytics • 100-Point Institutional Scorer</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 text-xs">
+      <button onclick="runPreset('Analyze Parag Parikh Flexi Cap Fund Direct Growth')" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 transition">PPFAS Flexi Cap</button>
+      <button onclick="runPreset('Analyze Nippon India Small Cap Fund Direct Growth')" class="px-3 py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 transition">Nippon Small Cap</button>
+      <button onclick="runPreset('Compare HDFC Flexi Cap Fund and Parag Parikh Flexi Cap Fund')" class="px-3 py-1.5 rounded-md bg-blue-950/80 border border-blue-700/50 hover:bg-blue-900/60 text-blue-200 transition">Compare & Overlap</button>
+    </div>
+  </header>
+
+  <!-- Main Split Layout -->
+  <main class="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 p-6 max-w-[1600px] w-full mx-auto">
+    <!-- Left Column: Conversational Agent & Markdown Report (5 cols) -->
+    <section class="lg:col-span-5 flex flex-col gap-4">
+      <div class="glass rounded-xl p-4 flex flex-col gap-3">
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Ask the Mutual Fund AI Analyst</label>
+        <form id="queryForm" onsubmit="handleQuerySubmit(event)" class="flex gap-2">
+          <input
+            id="queryInput"
+            type="text"
+            placeholder="e.g., Evaluate Motilal Oswal Midcap Fund or Compare SBI Contra vs ICICI Value Discovery..."
+            class="flex-1 bg-slate-900 border border-slate-700 rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            required
+          />
+          <button
+            id="submitBtn"
+            type="submit"
+            class="px-4 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 font-semibold text-sm text-white transition whitespace-nowrap"
+          >
+            Analyze Live
+          </button>
+        </form>
+        <div id="stepsLog" class="hidden text-xs text-slate-400 bg-slate-950/70 rounded-lg p-3 border border-slate-800 space-y-1 max-h-32 overflow-y-auto"></div>
+      </div>
+
+      <!-- Detailed Markdown Analysis & Suggestion -->
+      <div class="glass rounded-xl p-5 flex-1 overflow-y-auto max-h-[75vh]">
+        <div id="reportContainer" class="prose max-w-none text-sm leading-relaxed text-slate-200">
+          <div class="text-slate-400 py-8 text-center">
+            <p class="text-base font-medium text-slate-300 mb-2">Ready to Evaluate Any Indian Mutual Fund Live</p>
+            <p class="text-xs max-w-md mx-auto">Enter a fund name above or click one of the quick presets. The agent will search AMFI, fetch live historical NAVs & TRI benchmarks, scrape expense ratio, AUM, manager & top holdings, compute a 100-Point Score, and write a detailed recommendation.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Live 100-Point Scorecard, Charts & Scraped Holdings (7 cols) -->
+    <section class="lg:col-span-7 flex flex-col gap-5">
+      <!-- Top Scorecard Banner -->
+      <div id="scorecardPanel" class="glass rounded-xl p-5">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+          <div>
+            <span id="fundCategoryBadge" class="inline-block text-xs font-medium px-2.5 py-0.5 rounded bg-slate-800 text-blue-300 mb-1">SEBI Category</span>
+            <h2 id="fundTitle" class="text-xl font-bold text-white">Select a Mutual Fund to View Live 100-Point Scorecard</h2>
+            <p id="fundMetaSub" class="text-xs text-slate-400 mt-0.5">Benchmark • Latest NAV • Expense Ratio • AUM</p>
+          </div>
+          <div class="flex items-center gap-4 bg-slate-900/90 px-4 py-3 rounded-xl border border-slate-800">
+            <div class="text-right">
+              <div class="text-xs text-slate-400 uppercase">Composite Score</div>
+              <div id="verdictBadge" class="text-xs font-bold text-emerald-400 mt-0.5">AWAITING QUERY</div>
+            </div>
+            <div class="w-16 h-16 rounded-full bg-slate-950 border-2 border-emerald-500 flex flex-col items-center justify-center">
+              <span id="totalScoreValue" class="text-xl font-extrabold text-white">—</span>
+              <span id="letterGradeValue" class="text-[10px] font-semibold text-emerald-400">/ 100</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 5-Pillar Bars -->
+        <div id="pillarsContainer" class="grid grid-cols-1 md:grid-cols-5 gap-3 mt-4">
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 text-xs text-slate-400">Performance Consistency (30)</div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 text-xs text-slate-400">Downside Protection (25)</div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 text-xs text-slate-400">Alpha & Sharpe (20)</div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 text-xs text-slate-400">Cost & AUM Health (15)</div>
+          <div class="bg-slate-900/60 p-3 rounded-lg border border-slate-800/80 text-xs text-slate-400">Portfolio & Manager (10)</div>
+        </div>
+      </div>
+
+      <!-- Rolling Returns & Drawdown Charts -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass rounded-xl p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Rolling 3Y Return (%) — Fund vs Benchmark</h3>
+          <div class="h-56"><canvas id="rollingChart"></canvas></div>
+        </div>
+        <div class="glass rounded-xl p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Underwater Drawdown Curve (%)</h3>
+          <div class="h-56"><canvas id="drawdownChart"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Scraped Top Holdings & Sector Allocation / Overlap -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div class="glass rounded-xl p-4">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Live Scraped Top Portfolio Holdings</h3>
+          <div id="holdingsList" class="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto">
+            <p class="text-slate-500">Top holdings will appear here after scraping.</p>
+          </div>
+        </div>
+        <div class="glass rounded-xl p-4">
+          <h3 id="rightBottomTitle" class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Sector Allocation & Peer Context</h3>
+          <div id="sectorOrOverlapList" class="space-y-2 text-xs text-slate-300 max-h-60 overflow-y-auto">
+            <p class="text-slate-500">Sector weights or pairwise overlap matrix will appear here.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    let rollingChartInstance = null;
+    let drawdownChartInstance = null;
+    let lastInteractionId = null;
+
+    function runPreset(text) {
+      document.getElementById('queryInput').value = text;
+      document.getElementById('queryForm').dispatchEvent(new Event('submit'));
+    }
+
+    async function handleQuerySubmit(e) {
+      e.preventDefault();
+      const inputEl = document.getElementById('queryInput');
+      const btn = document.getElementById('submitBtn');
+      const stepsLog = document.getElementById('stepsLog');
+      const reportContainer = document.getElementById('reportContainer');
+
+      const message = inputEl.value.trim();
+      if (!message) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Scraping & Scoring...';
+      stepsLog.classList.remove('hidden');
+      stepsLog.innerHTML = '<div class="text-blue-400 animate-pulse">⚡Searching AMFI schemes, scraping live holdings & computing rolling alpha...</div>';
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, previous_interaction_id: lastInteractionId })
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail || 'Failed to analyze fund');
+        }
+        const data = await res.json();
+        lastInteractionId = data.interaction_id || null;
+
+        // Render execution steps
+        if (data.execution_steps && data.execution_steps.length) {
+          stepsLog.innerHTML = data.execution_steps.map(s => `<div>✓ ${s}</div>`).join('');
+        }
+
+        // Render Markdown Report
+        reportContainer.innerHTML = marked.parse(data.markdown_report || '');
+
+        // Render Primary Fund Scorecard & Charts
+        if (data.primary_fund) {
+          renderFundDashboard(data.primary_fund, data.overlap_analysis);
+        }
+      } catch (err) {
+        stepsLog.innerHTML = `<div class="text-rose-400">Error: ${err.message}</div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Analyze Live';
+      }
+    }
+
+    function renderFundDashboard(fund, overlapAnalysis) {
+      const sc = fund.scorecard;
+      const qr = fund.quant_report;
+      const fn = fund.fundamentals;
+
+      document.getElementById('fundCategoryBadge').textContent = fund.sebi_category || 'Equity Scheme';
+      document.getElementById('fundTitle').textContent = fund.scheme_name;
+      const ter = fn.expense_ratio_pct != null ? `${fn.expense_ratio_pct}% TER` : 'Direct Plan';
+      const aum = fn.aum_crores != null ? `₹${Number(fn.aum_crores).toLocaleString()} Cr AUM` : '';
+      document.getElementById('fundMetaSub').textContent =
+        `Benchmark: ${qr.benchmark_name} • NAV: ₹${fund.latest_nav} (${fund.latest_nav_date}) • ${ter} ${aum ? '• ' + aum : ''}`;
+
+      document.getElementById('totalScoreValue').textContent = sc.total_score;
+      document.getElementById('letterGradeValue').textContent = `Grade ${sc.letter_grade}`;
+      document.getElementById('verdictBadge').textContent = sc.verdict;
+
+      // Render 5 Pillars
+      const pillarsEl = document.getElementById('pillarsContainer');
+      pillarsEl.innerHTML = sc.pillars.map(p => {
+        const pct = Math.round((p.score / p.max_score) * 100);
+        return `
+          <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800 flex flex-col justify-between">
+            <div>
+              <div class="text-[11px] text-slate-400 font-medium">${p.name}</div>
+              <div class="text-base font-bold text-white mt-0.5">${p.score} <span class="text-xs text-slate-500">/ ${p.max_score}</span></div>
+            </div>
+            <div class="mt-2">
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-gradient-to-r from-blue-500 to-emerald-400" style="width:${pct}%"></div>
+              </div>
+              <div class="text-[10px] text-emerald-400 mt-1 font-medium">${p.rating_label}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Render Rolling Chart
+      const rData = qr.chart_rolling_3y || [];
+      const rCtx = document.getElementById('rollingChart').getContext('2d');
+      if (rollingChartInstance) rollingChartInstance.destroy();
+      rollingChartInstance = new Chart(rCtx, {
+        type: 'line',
+        data: {
+          labels: rData.map(d => d.date),
+          datasets: [
+            { label: 'Fund Rolling CAGR %', data: rData.map(d => d.fund_rolling_cagr), borderColor: '#10b981', borderWidth: 2, pointRadius: 0, tension: 0.25 },
+            { label: 'Benchmark Rolling CAGR %', data: rData.map(d => d.benchmark_rolling_cagr), borderColor: '#64748b', borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0, tension: 0.25 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { color: '#64748b', maxTicksLimit: 6 }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+
+      // Render Drawdown Chart
+      const ddData = qr.chart_drawdown || [];
+      const ddCtx = document.getElementById('drawdownChart').getContext('2d');
+      if (drawdownChartInstance) drawdownChartInstance.destroy();
+      drawdownChartInstance = new Chart(ddCtx, {
+        type: 'line',
+        data: {
+          labels: ddData.map(d => d.date),
+          datasets: [
+            { label: 'Fund Drawdown %', data: ddData.map(d => d.fund_drawdown_pct), borderColor: '#f43f5e', backgroundColor: 'rgba(244,63,94,0.12)', fill: true, borderWidth: 1.8, pointRadius: 0 },
+            { label: 'Benchmark Drawdown %', data: ddData.map(d => d.benchmark_drawdown_pct), borderColor: '#64748b', borderDash: [3, 3], borderWidth: 1.2, pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#94a3b8', boxWidth: 12, font: { size: 11 } } } },
+          scales: {
+            x: { ticks: { color: '#64748b', maxTicksLimit: 6 }, grid: { display: false } },
+            y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+          }
+        }
+      });
+
+      // Render Top Holdings
+      const holdingsEl = document.getElementById('holdingsList');
+      const topH = (fn.top_holdings || []).slice(0, 12);
+      if (topH.length) {
+        holdingsEl.innerHTML = topH.map(h => `
+          <div class="flex items-center justify-between py-1 border-b border-slate-800/60">
+            <div>
+              <span class="font-medium text-slate-200">${h.company_name}</span>
+              <span class="text-[10px] text-slate-500 ml-1.5">${h.sector || ''}</span>
+            </div>
+            <span class="font-semibold text-emerald-400">${h.weight_pct}%</span>
+          </div>
+        `).join('');
+      } else {
+        holdingsEl.innerHTML = '<p class="text-slate-500">Holdings disclosures summarized in the AI Analyst report.</p>';
+      }
+
+      // Render Sector Allocation or Overlap
+      const rightEl = document.getElementById('sectorOrOverlapList');
+      const rightTitle = document.getElementById('rightBottomTitle');
+      if (overlapAnalysis && overlapAnalysis.pairwise_overlap && overlapAnalysis.pairwise_overlap.length) {
+        rightTitle.textContent = 'Pairwise Portfolio Holdings Overlap';
+        rightEl.innerHTML = overlapAnalysis.pairwise_overlap.map(pair => `
+          <div class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 space-y-1">
+            <div class="flex justify-between font-semibold text-white">
+              <span>${pair.fund_a} ↔ ${pair.fund_b}</span>
+              <span class="text-blue-400">${pair.weight_overlap_pct}% Overlap</span>
+            </div>
+            <div class="text-[11px] text-slate-400">${pair.common_stocks_count} Common Stocks • ${pair.diagnosis}</div>
+          </div>
+        `).join('');
+      } else {
+        rightTitle.textContent = 'Scraped Sector Allocation (%)';
+        const sectors = Object.entries(fn.sector_allocation || {});
+        if (sectors.length) {
+          rightEl.innerHTML = sectors.map(([sec, wt]) => `
+            <div class="space-y-1">
+              <div class="flex justify-between">
+                <span class="text-slate-300">${sec}</span>
+                <span class="font-semibold text-blue-400">${wt}%</span>
+              </div>
+              <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-blue-500" style="width:${Math.min(100, wt * 2)}%"></div>
+              </div>
+            </div>
+          `).join('');
+        } else {
+          rightEl.innerHTML = '<p class="text-slate-500">Sector split included in qualitative summary.</p>';
+        }
+      }
+    }
+  </script>
+</body>
+</html>
+
