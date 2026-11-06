@@ -59,3 +59,17 @@ export async function sendChatQuery(
   return res.json();
 }
 
+export async function compareMultipleFunds(
+  queries: string[]
+): Promise<AgentResponsePayload> {
+  const res = await fetch(`${API_BASE}/api/compare`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ queries }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || "Failed to compare mutual funds");
+  }
+  return res.json();
+}

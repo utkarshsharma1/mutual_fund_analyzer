@@ -145,22 +145,26 @@ def format_single_fund_markdown(eval_data: dict[str, Any]) -> str:
 
 
 def format_comparison_markdown(comp_data: dict[str, Any]) -> str:
-    """Generate a structured Markdown comparison & portfolio overlap report."""
+    """Generate a structured Markdown comparison & portfolio overlap report for 2 to 10 mutual funds."""
     funds = comp_data.get("compared_funds", [])
     overlap = comp_data.get("overlap_analysis")
 
     lines: list[str] = [
-        "## Multi-Fund Comparison & Portfolio Overlap Analysis",
+        f"## Multi-Fund Comparison & Portfolio Overlap ({len(funds)} Funds Evaluated)",
         "",
-        "### 1. Head-to-Head Scorecard & Quantitative Ranking",
-        "| Rank | Mutual Fund | Score (100) | Verdict | 3Y Rolling Median | 3Y Consistency | 3Y Alpha | Sortino | Downside Capture | TER | AUM |",
-        "| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
+        "### 1. Head-to-Head Quantitative Leaderboard (Ranked by 100-Pt Score)",
+        "| Rank | Mutual Fund | Score | Verdict | 1Y / 3Y / 5Y CAGR | 3Y Rolling Median | 3Y Consistency | 3Y Alpha | Sortino | Downside Capture | TER | AUM |",
+        "| :---: | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
     ]
     for idx, f in enumerate(funds, start=1):
         sc = f["scorecard"]
         qr = f["quant_report"]
         rm = qr["risk_metrics"]
         fn = f["fundamentals"]
+        tr = qr["trailing_returns_cagr_pct"]
+        c1 = f"{tr['1Y']['fund_cagr_pct']:.1f}%" if tr.get("1Y", {}).get("fund_cagr_pct") is not None else "—"
+        c3 = f"{tr['3Y']['fund_cagr_pct']:.1f}%" if tr.get("3Y", {}).get("fund_cagr_pct") is not None else "—"
+        c5 = f"{tr['5Y']['fund_cagr_pct']:.1f}%" if tr.get("5Y", {}).get("fund_cagr_pct") is not None else "—"
         r3 = qr["rolling_returns"].get("3Y") or qr["rolling_returns"].get("1Y")
         r3_med = f"{r3['fund_median_cagr_pct']:.2f}%" if r3 else "—"
         r3_con = f"{r3['outperformance_consistency_pct']:.1f}%" if r3 else "—"
@@ -168,15 +172,35 @@ def format_comparison_markdown(comp_data: dict[str, Any]) -> str:
         aum = f"₹{fn['aum_crores']:,.0f} Cr" if fn.get("aum_crores") is not None else "—"
         lines.append(
             f"| **#{idx}** | **{f['scheme_name']}** | **{sc['total_score']}** (`{sc['letter_grade']}`) | `{sc['verdict']}` | "
-            f"{r3_med} | {r3_con} | `{rm['jensen_alpha_pct']:+.2f}%` | {rm['sortino_ratio']:.2f} | "
+            f"{c1} / {c3} / {c5} | {r3_med} | {r3_con} | `{rm['jensen_alpha_pct']:+.2f}%` | {rm['sortino_ratio']:.2f} | "
             f"{rm['downside_capture_ratio']:.1f}% | {ter} | {aum} |"
         )
+
+    if funds:
+        lines.extend(
+            [
+                "",
+                "### 2. 5-Pillar Score Breakdown Across Compared Funds",
+                "| Mutual Fund | Consistency (/30) | Downside & Risk (/25) | Alpha & Sharpe (/20) | Cost & Size (/15) | Portfolio & Manager (/10) | Total (/100) |",
+                "| :--- | :---: | :---: | :---: | :---: | :---: | :---: |",
+            ]
+        )
+        for f in funds:
+            sc = f["scorecard"]
+            p_map = {p["name"]: p["score"] for p in sc.get("pillars", [])}
+            lines.append(
+                f"| **{f['scheme_name']}** | {p_map.get('Performance Consistency', 0)} | "
+                f"{p_map.get('Downside Protection & Risk', 0)} | "
+                f"{p_map.get('Alpha & Risk-Adjusted Return', 0)} | "
+                f"{p_map.get('Cost, Size & Liquidity Health', 0)} | "
+                f"{p_map.get('Portfolio & Manager Quality', 0)} | **{sc['total_score']}** |"
+            )
 
     if overlap and overlap.get("pairwise_overlap"):
         lines.extend(
             [
                 "",
-                "### 2. Pairwise Portfolio Holdings Overlap",
+                "### 3. Pairwise Portfolio Holdings Overlap Matrix",
                 "| Fund A | Fund B | Weight Overlap | Common Stocks | Diversification Diagnosis |",
                 "| :--- | :--- | :---: | :---: | :--- |",
             ]
@@ -189,13 +213,17 @@ def format_comparison_markdown(comp_data: dict[str, Any]) -> str:
 
     if funds:
         winner = funds[0]
+        best_downside = min(funds, key=lambda x: x["quant_report"]["risk_metrics"]["downside_capture_ratio"])
+        best_alpha = max(funds, key=lambda x: x["quant_report"]["risk_metrics"]["jensen_alpha_pct"])
         lines.extend(
             [
                 "",
-                "### 3. Analyst Recommendation",
-                f"- **Top Ranked Pick:** **{winner['scheme_name']}** leads with a score of **{winner['scorecard']['total_score']}/100** "
-                f"(`{winner['scorecard']['verdict']}`), backed by `{winner['quant_report']['risk_metrics']['jensen_alpha_pct']:+.2f}%` annualized alpha "
+                "### 4. Analyst Summary & Portfolio Construction Advice",
+                f"- **#1 Overall Ranked Pick:** **{winner['scheme_name']}** scores **{winner['scorecard']['total_score']}/100** "
+                f"(`{winner['scorecard']['verdict']}`), delivering `{winner['quant_report']['risk_metrics']['jensen_alpha_pct']:+.2f}%` annualized alpha "
                 f"and `{winner['quant_report']['risk_metrics']['downside_capture_ratio']:.1f}%` downside capture.",
+                f"- **Highest Alpha Generator:** **{best_alpha['scheme_name']}** (`{best_alpha['quant_report']['risk_metrics']['jensen_alpha_pct']:+.2f}%` Jensen's Alpha, Sharpe `{best_alpha['quant_report']['risk_metrics']['sharpe_ratio']:.2f}`).",
+                f"- **Strongest Downside Protector:** **{best_downside['scheme_name']}** (`{best_downside['quant_report']['risk_metrics']['downside_capture_ratio']:.1f}%` downside capture, Max Drawdown `{best_downside['quant_report']['risk_metrics']['max_drawdown_pct']:.2f}%`).",
             ]
         )
 
@@ -210,20 +238,20 @@ def format_comparison_markdown(comp_data: dict[str, Any]) -> str:
 
 
 def _extract_fund_queries_from_message(message: str) -> tuple[str, list[str]]:
-    """Heuristic parser to detect single-fund analysis vs multi-fund comparison from natural language."""
+    """Heuristic parser to detect single-fund analysis vs multi-fund comparison (up to 10 funds) from natural language."""
     cleaned = message.strip()
-    # Check for comparison patterns ("compare X and Y", "X vs Y", "overlap between X and Y")
-    if re.search(r"\b(compare|vs\.?|versus|overlap|between)\b", cleaned, re.IGNORECASE):
+    # Check for comparison patterns ("compare X, Y, Z...", "X vs Y", "overlap between...") or comma-separated lists
+    if re.search(r"\b(compare|vs\.?|versus|overlap|between)\b", cleaned, re.IGNORECASE) or cleaned.count(",") >= 2:
         stripped = re.sub(
             r"^(please\s+)?(can you\s+)?(compare|check overlap between|analyze overlap of|evaluate)\s+",
             "",
             cleaned,
             flags=re.IGNORECASE,
         )
-        parts = re.split(r"\s+(?:vs\.?|versus|and|with|,)\s+", stripped, flags=re.IGNORECASE)
+        parts = re.split(r"\s*(?:,|\s+vs\.?\s+|\s+versus\s+|\s+and\s+|\s+with\s+|;)\s*", stripped, flags=re.IGNORECASE)
         parts = [p.strip(" ?.!\"'") for p in parts if len(p.strip(" ?.!\"'")) >= 3]
         if len(parts) >= 2:
-            return "compare", parts[:4]
+            return "compare", parts[:10]
 
     # Single fund extraction
     single = re.sub(

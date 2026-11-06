@@ -4,7 +4,12 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from app.agent.orchestrator import format_single_fund_markdown
+from app.agent.orchestrator import (
+    _extract_fund_queries_from_message,
+    format_comparison_markdown,
+    format_single_fund_markdown,
+)
+from app.agent.schemas import CompareFundsRequest
 from app.main import app
 from app.quant.metrics import compute_fund_quant_report
 from app.quant.scorer import evaluate_fund_scorecard
@@ -77,4 +82,58 @@ def test_markdown_report_synthesis() -> None:
     assert "Rolling vs Trailing Return Analysis" in md
     assert "Detailed Investment Suggestion" in md
     assert "STRONG CONTENDER / CORE BUY" in md
+
+
+def test_five_fund_comparison_support() -> None:
+    """Verify 5+ mutual fund comparison extraction, schema validation, and markdown leaderboard."""
+    five_funds = [
+        "Parag Parikh Flexi Cap Fund",
+        "HDFC Flexi Cap Fund",
+        "JM Flexicap Fund",
+        "Quant Flexi Cap Fund",
+        "Kotak Flexicap Fund",
+        "UTI Flexi Cap Fund",
+    ]
+    req = CompareFundsRequest(queries=five_funds)
+    assert len(req.queries) == 6
+
+    mode, parsed = _extract_fund_queries_from_message(
+        "Compare Parag Parikh Flexi Cap, HDFC Flexi Cap, JM Flexicap, Quant Flexi Cap, and Kotak Flexicap"
+    )
+    assert mode == "compare"
+    assert len(parsed) == 5
+
+    bench_df, fund_df = _generate_benchmark_and_fund_series()
+    quant = compute_fund_quant_report(
+        scheme_code=122639,
+        scheme_name="Fund 1",
+        benchmark_name="Nifty 500 TRI",
+        fund_nav_df=fund_df,
+        benchmark_nav_df=bench_df,
+    )
+    fundamentals = ScrapedFundFundamentals(
+        scheme_name="Fund 1",
+        sebi_category="Flexi Cap Fund",
+        expense_ratio_pct=0.60,
+        aum_crores=15000.0,
+    )
+    sc = evaluate_fund_scorecard(quant, fundamentals, sebi_category="Flexi Cap Fund")
+
+    compared_payloads = [
+        {
+            "scheme_code": 100000 + i,
+            "scheme_name": name,
+            "fund_house": "AMC",
+            "sebi_category": "Flexi Cap Fund",
+            "scorecard": sc.to_dict(),
+            "quant_report": quant.to_dict(),
+            "fundamentals": {"expense_ratio_pct": 0.6, "aum_crores": 15000.0},
+        }
+        for i, name in enumerate(five_funds[:5])
+    ]
+
+    comp_md = format_comparison_markdown({"compared_funds": compared_payloads, "overlap_analysis": None})
+    assert "5 Funds Evaluated" in comp_md
+    assert "5-Pillar Score Breakdown Across Compared Funds" in comp_md
+
 

@@ -15,13 +15,13 @@ class AnalyzeFundRequest(BaseModel):
 
 
 class CompareFundsRequest(BaseModel):
-    """Request payload to compare 2 to 4 mutual funds and compute portfolio overlap."""
+    """Request payload to compare 2 to 10 mutual funds and compute portfolio overlap."""
 
     queries: list[str] = Field(
         ...,
         min_length=2,
-        max_length=5,
-        description="List of 2-5 mutual fund names or scheme codes to compare",
+        max_length=10,
+        description="List of 2-10 mutual fund names or scheme codes to compare (supports 5+ funds)",
     )
 
 

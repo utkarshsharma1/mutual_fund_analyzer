@@ -49,9 +49,9 @@ COMPARE_MUTUAL_FUNDS_TOOL: dict[str, Any] = {
     "type": "function",
     "name": "compare_mutual_funds_and_overlap",
     "description": (
-        "Compares 2 to 4 Indian mutual funds side-by-side (computing each fund's 100-point scorecard, "
-        "rolling returns, Sharpe, Sortino, Alpha, Downside Capture, TER, and AUM) and calculates "
-        "their pairwise portfolio stock & sector overlap matrix."
+        "Compares 2 to 10 Indian mutual funds side-by-side (supporting 5 or more funds at once, "
+        "computing each fund's 100-point scorecard, rolling returns, Sharpe, Sortino, Alpha, "
+        "Downside Capture, TER, and AUM) and calculates their pairwise portfolio stock & sector overlap matrix."
     ),
     "parameters": {
         "type": "object",
@@ -59,7 +59,7 @@ COMPARE_MUTUAL_FUNDS_TOOL: dict[str, Any] = {
             "fund_queries": {
                 "type": "array",
                 "items": {"type": "string"},
-                "description": "List of 2 to 4 mutual fund names to compare and check portfolio overlap",
+                "description": "List of 2 to 10 mutual fund names to compare and check portfolio overlap",
             }
         },
         "required": ["fund_queries"],
@@ -197,12 +197,13 @@ async def compare_mutual_funds_live(
     fund_queries: list[str],
     include_web_grounding: bool = False,
 ) -> dict[str, Any]:
-    """Evaluate 2 to 5 mutual funds in parallel and compute their portfolio overlap matrix."""
-    steps: list[str] = [f"Comparing {len(fund_queries)} mutual funds in parallel..."]
+    """Evaluate 2 to 10 mutual funds in parallel and compute their portfolio overlap matrix."""
+    cleaned_queries = [q.strip() for q in fund_queries if q and q.strip()][:10]
+    steps: list[str] = [f"Comparing {len(cleaned_queries)} mutual funds in parallel..."]
 
     tasks = [
         evaluate_mutual_fund_live(q, include_web_grounding=include_web_grounding)
-        for q in fund_queries[:5]
+        for q in cleaned_queries
     ]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
